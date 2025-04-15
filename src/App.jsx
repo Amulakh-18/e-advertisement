@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button, Box, Drawer, List, ListItem, ListItemIcon, ListItemText, IconButton, useMediaQuery, useTheme, Divider, Container } from '@mui/material';
-import { Home, Dashboard, People, Settings, Login, Logout, Menu as MenuIcon } from '@mui/icons-material';
+import {
+  Home,
+  Dashboard,
+  AddCircleOutline,
+  Campaign,
+  Analytics as AnalyticsIcon,
+  Settings as SettingsIcon,
+  Menu as MenuIcon,
+  Logout,
+  TrackChanges as TargetIcon,
+  AttachMoney as BudgetIcon,
+} from '@mui/icons-material';
 import theme from './theme';
 import HomePage from './features/home/HomePage';
 import LoginPage from './features/auth/LoginPage';
@@ -17,12 +28,16 @@ import AdBuilder from './features/adBuilder/AdBuilder';
 import Analytics from './features/analytics/Analytics';
 import Campaigns from './features/campaigns/Campaigns';
 import Footer from './components/layout/Footer';
+import Settings from './features/settings/Settings';
+import ViewerDashboard from './features/viewer/ViewerDashboard';
+import Targeting from './features/targeting/Targeting';
+import Budget from './features/budget/Budget';
 
 // Define drawer width constant
 const DRAWER_WIDTH = 240;
 
 const Navigation = ({ sidebarOpen, setSidebarOpen }) => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, isAdvertiser } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -45,8 +60,8 @@ const Navigation = ({ sidebarOpen, setSidebarOpen }) => {
   const menuItems = [
     { text: 'Home', path: '/', icon: <Home /> },
     { text: 'Features', path: '/features', icon: <Dashboard /> },
-    { text: 'Benefits', path: '/benefits', icon: <People /> },
-    { text: 'FAQ', path: '/faq', icon: <Settings /> },
+    { text: 'Benefits', path: '/benefits', icon: <Dashboard /> },
+    { text: 'FAQ', path: '/faq', icon: <SettingsIcon /> },
   ];
 
   const drawer = (
@@ -97,7 +112,7 @@ const Navigation = ({ sidebarOpen, setSidebarOpen }) => {
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
-        {isAuthenticated && user?.role === 'admin' && (
+        {isAuthenticated && user?.role === UserRoles.ADMIN && (
           <ListItem
             button
             component={Link}
@@ -117,79 +132,131 @@ const Navigation = ({ sidebarOpen, setSidebarOpen }) => {
             <ListItemText primary="Admin Dashboard" />
           </ListItem>
         )}
-        {isAuthenticated && user?.role === 'advertiser' && (
+        {isAuthenticated && user?.role === UserRoles.ADVERTISER && (
           <>
             <ListItem
               button
               component={Link}
               to="/advertiser"
-              selected={location.pathname.startsWith('/advertiser')}
+              selected={location.pathname === '/advertiser'}
               sx={{
-                color: location.pathname.startsWith('/advertiser') ? theme.palette.primary.main : theme.palette.text.primary,
+                color: location.pathname === '/advertiser' ? theme.palette.primary.main : theme.palette.text.primary,
                 '&:hover': {
                   background: 'rgba(33, 150, 243, 0.1)',
                 },
-                borderLeft: location.pathname.startsWith('/advertiser') ? `4px solid ${theme.palette.primary.main}` : 'none',
+                borderLeft: location.pathname === '/advertiser' ? `4px solid ${theme.palette.primary.main}` : 'none',
               }}
             >
-              <ListItemIcon sx={{ color: location.pathname.startsWith('/advertiser') ? theme.palette.primary.main : theme.palette.text.primary }}>
+              <ListItemIcon sx={{ color: location.pathname === '/advertiser' ? theme.palette.primary.main : theme.palette.text.primary }}>
                 <Dashboard />
               </ListItemIcon>
-              <ListItemText primary="Advertiser Dashboard" />
+              <ListItemText primary="Dashboard" />
             </ListItem>
             <ListItem
               button
               component={Link}
-              to="/create-ad"
-              selected={location.pathname === '/create-ad'}
+              to="/advertiser/create-ad"
+              selected={location.pathname === '/advertiser/create-ad'}
               sx={{
-                color: location.pathname === '/create-ad' ? theme.palette.primary.main : theme.palette.text.primary,
+                color: location.pathname === '/advertiser/create-ad' ? theme.palette.primary.main : theme.palette.text.primary,
                 '&:hover': {
                   background: 'rgba(33, 150, 243, 0.1)',
                 },
-                borderLeft: location.pathname === '/create-ad' ? `4px solid ${theme.palette.primary.main}` : 'none',
+                borderLeft: location.pathname === '/advertiser/create-ad' ? `4px solid ${theme.palette.primary.main}` : 'none',
               }}
             >
-              <ListItemIcon sx={{ color: location.pathname === '/create-ad' ? theme.palette.primary.main : theme.palette.text.primary }}>
-                <Dashboard />
+              <ListItemIcon sx={{ color: location.pathname === '/advertiser/create-ad' ? theme.palette.primary.main : theme.palette.text.primary }}>
+                <AddCircleOutline />
               </ListItemIcon>
               <ListItemText primary="Create Ad" />
             </ListItem>
             <ListItem
               button
               component={Link}
-              to="/campaigns"
-              selected={location.pathname === '/campaigns'}
+              to="/advertiser/campaigns"
+              selected={location.pathname === '/advertiser/campaigns'}
               sx={{
-                color: location.pathname === '/campaigns' ? theme.palette.primary.main : theme.palette.text.primary,
+                color: location.pathname === '/advertiser/campaigns' ? theme.palette.primary.main : theme.palette.text.primary,
                 '&:hover': {
                   background: 'rgba(33, 150, 243, 0.1)',
                 },
-                borderLeft: location.pathname === '/campaigns' ? `4px solid ${theme.palette.primary.main}` : 'none',
+                borderLeft: location.pathname === '/advertiser/campaigns' ? `4px solid ${theme.palette.primary.main}` : 'none',
               }}
             >
-              <ListItemIcon sx={{ color: location.pathname === '/campaigns' ? theme.palette.primary.main : theme.palette.text.primary }}>
-                <Dashboard />
+              <ListItemIcon sx={{ color: location.pathname === '/advertiser/campaigns' ? theme.palette.primary.main : theme.palette.text.primary }}>
+                <Campaign />
               </ListItemIcon>
               <ListItemText primary="Campaigns" />
             </ListItem>
             <ListItem
               button
               component={Link}
-              to="/analytics"
-              selected={location.pathname === '/analytics'}
+              to="/advertiser/targeting"
+              selected={location.pathname === '/advertiser/targeting'}
               sx={{
-                color: location.pathname === '/analytics' ? theme.palette.primary.main : theme.palette.text.primary,
+                color: location.pathname === '/advertiser/targeting' ? theme.palette.primary.main : theme.palette.text.primary,
                 '&:hover': {
                   background: 'rgba(33, 150, 243, 0.1)',
                 },
-                borderLeft: location.pathname === '/analytics' ? `4px solid ${theme.palette.primary.main}` : 'none',
+                borderLeft: location.pathname === '/advertiser/targeting' ? `4px solid ${theme.palette.primary.main}` : 'none',
               }}
             >
-              <ListItemIcon sx={{ color: location.pathname === '/analytics' ? theme.palette.primary.main : theme.palette.text.primary }}>
-                <Dashboard />
+              <ListItemIcon sx={{ color: location.pathname === '/advertiser/targeting' ? theme.palette.primary.main : theme.palette.text.primary }}>
+                <TargetIcon />
+              </ListItemIcon>
+              <ListItemText primary="Targeting" />
+            </ListItem>
+            <ListItem
+              button
+              component={Link}
+              to="/advertiser/budget"
+              selected={location.pathname === '/advertiser/budget'}
+              sx={{
+                color: location.pathname === '/advertiser/budget' ? theme.palette.primary.main : theme.palette.text.primary,
+                '&:hover': {
+                  background: 'rgba(33, 150, 243, 0.1)',
+                },
+                borderLeft: location.pathname === '/advertiser/budget' ? `4px solid ${theme.palette.primary.main}` : 'none',
+              }}
+            >
+              <ListItemIcon sx={{ color: location.pathname === '/advertiser/budget' ? theme.palette.primary.main : theme.palette.text.primary }}>
+                <BudgetIcon />
+              </ListItemIcon>
+              <ListItemText primary="Budget" />
+            </ListItem>
+            <ListItem
+              button
+              component={Link}
+              to="/advertiser/analytics"
+              selected={location.pathname === '/advertiser/analytics'}
+              sx={{
+                color: location.pathname === '/advertiser/analytics' ? theme.palette.primary.main : theme.palette.text.primary,
+                '&:hover': {
+                  background: 'rgba(33, 150, 243, 0.1)',
+                },
+                borderLeft: location.pathname === '/advertiser/analytics' ? `4px solid ${theme.palette.primary.main}` : 'none',
+              }}
+            >
+              <ListItemIcon sx={{ color: location.pathname === '/advertiser/analytics' ? theme.palette.primary.main : theme.palette.text.primary }}>
+                <AnalyticsIcon />
               </ListItemIcon>
               <ListItemText primary="Analytics" />
+            </ListItem>
+            <Divider sx={{ my: 2 }} />
+            <ListItem
+              button
+              onClick={handleLogout}
+              sx={{
+                color: theme.palette.error.main,
+                '&:hover': {
+                  background: 'rgba(211, 47, 47, 0.1)',
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: theme.palette.error.main }}>
+                <Logout />
+              </ListItemIcon>
+              <ListItemText primary="Logout" />
             </ListItem>
           </>
         )}
@@ -208,10 +275,33 @@ const Navigation = ({ sidebarOpen, setSidebarOpen }) => {
             }}
           >
             <ListItemIcon sx={{ color: location.pathname === '/settings' ? theme.palette.primary.main : theme.palette.text.primary }}>
-              <Settings />
+              <SettingsIcon />
             </ListItemIcon>
             <ListItemText primary="Settings" />
           </ListItem>
+        )}
+        {isAuthenticated && user?.role === UserRoles.VIEWER && (
+          <>
+            <ListItem
+              button
+              component={Link}
+              to="/viewer"
+              selected={location.pathname === '/viewer'}
+              sx={{
+                color: location.pathname === '/viewer' ? theme.palette.primary.main : theme.palette.text.primary,
+                '&:hover': {
+                  background: 'rgba(33, 150, 243, 0.1)',
+                },
+                borderLeft: location.pathname === '/viewer' ? `4px solid ${theme.palette.primary.main}` : 'none',
+              }}
+            >
+              <ListItemIcon sx={{ color: location.pathname === '/viewer' ? theme.palette.primary.main : theme.palette.text.primary }}>
+                <Dashboard />
+              </ListItemIcon>
+              <ListItemText primary="Viewer Dashboard" />
+            </ListItem>
+            <Divider sx={{ my: 2 }} />
+          </>
         )}
       </List>
       {isAuthenticated && (
@@ -340,275 +430,177 @@ function App() {
 }
 
 function AppContent() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const theme = useTheme();
-  const location = useLocation();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   return (
-    <Box sx={{ 
-      display: 'flex',
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0A1929 0%, #1A2027 100%)',
-    }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <CssBaseline />
+      
+      {/* AppBar */}
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
+          ml: { sm: `${DRAWER_WIDTH}px` },
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        }}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            sx={{ mr: 2, display: { sm: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Box sx={{ flexGrow: 1 }} />
+          {!isAuthenticated ? (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                component={Link}
+                to="/login"
+                variant="outlined"
+                color="primary"
+                sx={{
+                  borderColor: 'rgba(33, 150, 243, 0.5)',
+                  '&:hover': {
+                    borderColor: '#2196F3',
+                    background: 'rgba(33, 150, 243, 0.08)',
+                  },
+                }}
+              >
+                Login
+              </Button>
+              <Button
+                component={Link}
+                to="/signup"
+                variant="contained"
+                sx={{
+                  background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1976D2, #1E88E5)',
+                  },
+                }}
+              >
+                Sign Up
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2" color="textSecondary">
+                {user?.name}
+              </Typography>
+              <IconButton
+                size="large"
+                edge="end"
+                aria-label="account"
+                aria-haspopup="true"
+                color="inherit"
+              >
+                <img
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`}
+                  alt={user?.name}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    border: '2px solid rgba(255, 255, 255, 0.2)',
+                  }}
+                />
+              </IconButton>
+            </Box>
+          )}
+        </Toolbar>
+      </AppBar>
+      
+      {/* Navigation component with Drawer */}
       <Navigation sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+
+      {/* Main content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
+          width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
+          ml: { sm: `${DRAWER_WIDTH}px` },
+          mt: '64px', // Add margin top to account for AppBar height
+          minHeight: 'calc(100vh - 64px)', // Ensure minimum height for content
           display: 'flex',
           flexDirection: 'column',
-          width: '100%',
-          transition: theme.transitions.create(['margin', 'width'], {
-            easing: theme.transitions.easing.easeInOut,
-            duration: 300,
-          }),
-          ...(sidebarOpen && {
-            ml: { sm: `${DRAWER_WIDTH}px` },
-          }),
+          overflow: 'hidden',
         }}
       >
-        <AppBar
-          position="fixed"
-          elevation={0}
-          sx={{
-            width: '100%',
-            background: 'rgba(10, 25, 41, 0.95)',
-            backdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-            transition: theme.transitions.create(['margin', 'width'], {
-              easing: theme.transitions.easing.easeInOut,
-              duration: 300,
-            }),
-            ...(sidebarOpen && {
-              ml: { sm: `${DRAWER_WIDTH}px` },
-              width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
-            }),
-          }}
-        >
-          <Toolbar sx={{ justifyContent: 'space-between', minHeight: '64px !important' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton
-                color="inherit"
-                aria-label="toggle drawer"
-                edge="start"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                sx={{
-                  mr: 2,
-                  color: theme.palette.primary.main,
-                  '&:hover': {
-                    background: 'rgba(33, 150, 243, 0.1)',
-                  },
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-              <Typography
-                variant="h6"
-                noWrap
-                component={Link}
-                to="/"
-                sx={{
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  fontWeight: 600,
-                  background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                AV's Advertisement
-              </Typography>
-            </Box>
-            {!isAuthenticated && (
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  component={Link}
-                  to="/login"
-                  sx={{
-                    borderColor: 'rgba(33, 150, 243, 0.5)',
-                    color: '#2196F3',
-                    '&:hover': {
-                      borderColor: '#2196F3',
-                      background: 'rgba(33, 150, 243, 0.08)',
-                    },
-                    textTransform: 'none',
-                    borderRadius: '8px',
-                    px: 3,
-                  }}
-                >
-                  Login
-                </Button>
-                <Button
-                  variant="contained"
-                  component={Link}
-                  to="/signup"
-                  sx={{
-                    background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-                    color: '#fff',
-                    '&:hover': {
-                      background: 'linear-gradient(45deg, #1976D2, #1E88E5)',
-                    },
-                    textTransform: 'none',
-                    borderRadius: '8px',
-                    px: 3,
-                    boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
-                  }}
-                >
-                  Sign Up
-                </Button>
-              </Box>
-            )}
-          </Toolbar>
-        </AppBar>
-        <Box
-          component="div"
-          sx={{
-            flexGrow: 1,
-            p: { xs: 2, sm: 3 },
-            mt: '64px',
-            overflow: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 3,
-          }}
-        >
-          <Container maxWidth="lg" sx={{ 
-            flexGrow: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 3,
-          }}>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/" element={
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                  py: 8,
-                }}>
-                  <Typography
-                    variant="h2"
-                    component="h1"
-                    sx={{
-                      fontWeight: 700,
-                      textAlign: 'center',
-                      background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      mb: 2,
-                    }}
-                  >
-                    Transform Your Advertising
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      textAlign: 'center',
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      maxWidth: '800px',
-                      mb: 4,
-                    }}
-                  >
-                    Reach your target audience with precision and maximize your ROI
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    component={Link}
-                    to="/signup"
-                    sx={{
-                      background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-                      color: '#fff',
-                      fontSize: '1.2rem',
-                      padding: '12px 48px',
-                      borderRadius: '12px',
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      boxShadow: '0 8px 32px rgba(33, 150, 243, 0.4)',
-                      '&:hover': {
-                        background: 'linear-gradient(45deg, #1976D2, #1E88E5)',
-                        boxShadow: '0 12px 48px rgba(33, 150, 243, 0.6)',
-                        transform: 'translateY(-2px)',
-                      },
-                      transition: 'all 0.3s ease',
-                    }}
-                  >
-                    Get Started
-                  </Button>
-                </Box>
-              } />
-              <Route path="/features" element={<FeaturesPage />} />
-              <Route path="/benefits" element={<BenefitsPage />} />
-              <Route path="/faq" element={<FAQPage />} />
-              <Route
-                path="/admin/*"
-                element={
-                  <ProtectedRoute requiredRole={UserRoles.ADMIN}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/advertiser/*"
-                element={
-                  <ProtectedRoute requiredRole={UserRoles.ADVERTISER}>
-                    <AdvertiserDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/create-ad"
-                element={
-                  <ProtectedRoute requiredRole={UserRoles.ADVERTISER}>
-                    <AdBuilder />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/analytics"
-                element={
-                  <ProtectedRoute requiredRole={UserRoles.ADVERTISER}>
-                    <Analytics />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/campaigns"
-                element={
-                  <ProtectedRoute requiredRole={UserRoles.ADVERTISER}>
-                    <Campaigns />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </Container>
-        </Box>
-        <Box
-          component="footer"
-          sx={{
-            width: '100%',
-            background: 'rgba(10, 25, 41, 0.95)',
-            backdropFilter: 'blur(20px)',
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          }}
-        >
-          <Footer />
-        </Box>
+        <Container maxWidth="xl" sx={{ flexGrow: 1, py: 3 }}>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/benefits" element={<BenefitsPage />} />
+            <Route path="/faq" element={<FAQPage />} />
+
+            {/* Protected routes */}
+            <Route path="/admin/*" element={
+              <ProtectedRoute allowedRoles={[UserRoles.ADMIN]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+
+            {/* Advertiser routes */}
+            <Route path="/advertiser" element={
+              <ProtectedRoute allowedRoles={[UserRoles.ADVERTISER]}>
+                <AdvertiserDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/advertiser/create-ad" element={
+              <ProtectedRoute allowedRoles={[UserRoles.ADVERTISER]}>
+                <AdBuilder />
+              </ProtectedRoute>
+            } />
+            <Route path="/advertiser/campaigns" element={
+              <ProtectedRoute allowedRoles={[UserRoles.ADVERTISER]}>
+                <Campaigns />
+              </ProtectedRoute>
+            } />
+            <Route path="/advertiser/targeting" element={
+              <ProtectedRoute allowedRoles={[UserRoles.ADVERTISER]}>
+                <Targeting />
+              </ProtectedRoute>
+            } />
+            <Route path="/advertiser/budget" element={
+              <ProtectedRoute allowedRoles={[UserRoles.ADVERTISER]}>
+                <Budget />
+              </ProtectedRoute>
+            } />
+            <Route path="/advertiser/analytics" element={
+              <ProtectedRoute allowedRoles={[UserRoles.ADVERTISER]}>
+                <Analytics />
+              </ProtectedRoute>
+            } />
+
+            {/* Viewer routes */}
+            <Route path="/viewer" element={
+              <ProtectedRoute allowedRoles={[UserRoles.VIEWER]}>
+                <ViewerDashboard />
+              </ProtectedRoute>
+            } />
+
+            {/* Settings route - accessible to all authenticated users */}
+            <Route path="/settings" element={
+              <ProtectedRoute allowedRoles={[UserRoles.ADMIN, UserRoles.ADVERTISER, UserRoles.VIEWER]}>
+                <Settings />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </Container>
       </Box>
     </Box>
   );

@@ -72,7 +72,7 @@ const LoginPage = () => {
     } catch (error) {
       setErrors(prev => ({
         ...prev,
-        submit: error.message || 'Invalid email or password'
+        submit: error.response?.data?.detail || error.message || 'Invalid email or password'
       }));
     } finally {
       setLoading(false);

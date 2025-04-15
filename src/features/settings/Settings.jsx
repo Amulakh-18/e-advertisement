@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Box,
+  Container,
   Grid,
   Paper,
   Typography,
@@ -90,17 +91,21 @@ const Settings = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 4 }}>
-        Settings
-      </Typography>
+    <Container maxWidth="lg" sx={{ py: 4, mt: 2 }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Settings
+        </Typography>
+      </Box>
 
       <Grid container spacing={3}>
         {/* Profile Settings */}
         <Grid item xs={12} md={6}>
           <Paper
+            elevation={0}
             sx={{
               p: 3,
+              height: '100%',
               background: 'rgba(255, 255, 255, 0.05)',
               backdropFilter: 'blur(10px)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -111,6 +116,7 @@ const Settings = () => {
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
               <Avatar
+                src={user?.photoURL}
                 sx={{
                   width: 100,
                   height: 100,
@@ -118,12 +124,20 @@ const Settings = () => {
                   background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
                 }}
               >
-                <PersonIcon sx={{ fontSize: 50 }} />
+                {user?.firstName?.[0] || <PersonIcon />}
               </Avatar>
               <Button
                 variant="outlined"
                 startIcon={<CloudUploadIcon />}
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                  color: 'primary.main',
+                  borderColor: 'rgba(33, 150, 243, 0.5)',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    background: 'rgba(33, 150, 243, 0.08)',
+                  },
+                }}
               >
                 Upload New Photo
               </Button>
@@ -134,6 +148,17 @@ const Settings = () => {
                   fullWidth
                   label="First Name"
                   defaultValue={user?.firstName || ''}
+                  variant="outlined"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                      },
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -141,6 +166,17 @@ const Settings = () => {
                   fullWidth
                   label="Last Name"
                   defaultValue={user?.lastName || ''}
+                  variant="outlined"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                      },
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -148,8 +184,19 @@ const Settings = () => {
                   fullWidth
                   label="Email"
                   defaultValue={user?.email || ''}
+                  variant="outlined"
                   InputProps={{
-                    startAdornment: <EmailIcon sx={{ mr: 1, color: theme.palette.text.secondary }} />,
+                    startAdornment: <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                      },
+                    },
                   }}
                 />
               </Grid>
@@ -171,137 +218,172 @@ const Settings = () => {
           </Paper>
         </Grid>
 
-        {/* Account Settings */}
+        {/* Account & Notification Settings */}
         <Grid item xs={12} md={6}>
-          <Paper
-            sx={{
-              p: 3,
-              background: 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Account Settings
-            </Typography>
-            <List>
-              <ListItem>
-                <ListItemIcon>
-                  <LockIcon />
-                </ListItemIcon>
-                <ListItemText primary="Change Password" />
-                <Button 
-                  variant="outlined" 
-                  size="small"
-                  onClick={() => setOpenPasswordDialog(true)}
-                >
-                  Change
-                </Button>
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemIcon>
-                  <LanguageIcon />
-                </ListItemIcon>
-                <ListItemText primary="Language" secondary="English" />
-                <Button variant="outlined" size="small">
-                  Change
-                </Button>
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemIcon>
-                  <PaletteIcon />
-                </ListItemIcon>
-                <ListItemText primary="Theme" secondary={themeMode === 'dark' ? 'Dark' : 'Light'} />
-                <Button 
-                  variant="outlined" 
-                  size="small"
-                  onClick={() => setOpenThemeDialog(true)}
-                >
-                  Change
-                </Button>
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemIcon>
-                  <DeleteIcon color="error" />
-                </ListItemIcon>
-                <ListItemText primary="Delete Account" secondary="This action cannot be undone" />
-                <Button variant="outlined" color="error" size="small">
-                  Delete
-                </Button>
-              </ListItem>
-            </List>
-          </Paper>
-        </Grid>
-
-        {/* Notification Settings */}
-        <Grid item xs={12}>
-          <Paper
-            sx={{
-              p: 3,
-              background: 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Notification Settings
-            </Typography>
-            <List>
-              <ListItem>
-                <ListItemIcon>
-                  <EmailIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Email Notifications"
-                  secondary="Receive notifications via email"
-                />
-                <ListItemSecondaryAction>
-                  <Switch
-                    edge="end"
-                    checked={notifications.email}
-                    onChange={handleNotificationChange('email')}
-                  />
-                </ListItemSecondaryAction>
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemIcon>
-                  <NotificationsIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Push Notifications"
-                  secondary="Receive push notifications"
-                />
-                <ListItemSecondaryAction>
-                  <Switch
-                    edge="end"
-                    checked={notifications.push}
-                    onChange={handleNotificationChange('push')}
-                  />
-                </ListItemSecondaryAction>
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemIcon>
-                  <NotificationsIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Marketing Emails"
-                  secondary="Receive marketing and promotional emails"
-                />
-                <ListItemSecondaryAction>
-                  <Switch
-                    edge="end"
-                    checked={notifications.marketing}
-                    onChange={handleNotificationChange('marketing')}
-                  />
-                </ListItemSecondaryAction>
-              </ListItem>
-            </List>
-          </Paper>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  Account Settings
+                </Typography>
+                <List>
+                  <ListItem>
+                    <ListItemIcon>
+                      <LockIcon />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Change Password"
+                      secondary="Update your password for better security"
+                    />
+                    <Button 
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        color: 'primary.main',
+                        borderColor: 'rgba(33, 150, 243, 0.5)',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          background: 'rgba(33, 150, 243, 0.08)',
+                        },
+                      }}
+                    >
+                      Change
+                    </Button>
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon>
+                      <LanguageIcon />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Language"
+                      secondary="English"
+                    />
+                    <Button 
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        color: 'primary.main',
+                        borderColor: 'rgba(33, 150, 243, 0.5)',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          background: 'rgba(33, 150, 243, 0.08)',
+                        },
+                      }}
+                    >
+                      Change
+                    </Button>
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon>
+                      <PaletteIcon />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Theme"
+                      secondary="Dark"
+                    />
+                    <Button 
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        color: 'primary.main',
+                        borderColor: 'rgba(33, 150, 243, 0.5)',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          background: 'rgba(33, 150, 243, 0.08)',
+                        },
+                      }}
+                    >
+                      Change
+                    </Button>
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon>
+                      <DeleteIcon color="error" />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Delete Account"
+                      secondary="This action cannot be undone"
+                      primaryTypographyProps={{ color: 'error' }}
+                    />
+                    <Button 
+                      variant="outlined"
+                      size="small"
+                      color="error"
+                    >
+                      Delete
+                    </Button>
+                  </ListItem>
+                </List>
+              </Paper>
+            </Grid>
+            <Grid item xs={12}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  Notification Settings
+                </Typography>
+                <List>
+                  <ListItem>
+                    <ListItemIcon>
+                      <EmailIcon />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Email Notifications"
+                      secondary="Receive notifications via email"
+                    />
+                    <Switch
+                      checked={notifications.email}
+                      onChange={(e) => setNotifications({ ...notifications, email: e.target.checked })}
+                      color="primary"
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon>
+                      <NotificationsIcon />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Push Notifications"
+                      secondary="Receive push notifications"
+                    />
+                    <Switch
+                      checked={notifications.push}
+                      onChange={(e) => setNotifications({ ...notifications, push: e.target.checked })}
+                      color="primary"
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon>
+                      <NotificationsIcon />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Marketing Emails"
+                      secondary="Receive marketing and promotional emails"
+                    />
+                    <Switch
+                      checked={notifications.marketing}
+                      onChange={(e) => setNotifications({ ...notifications, marketing: e.target.checked })}
+                      color="primary"
+                    />
+                  </ListItem>
+                </List>
+              </Paper>
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
 
@@ -416,7 +498,7 @@ const Settings = () => {
           <Button onClick={() => setOpenThemeDialog(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   );
 };
 

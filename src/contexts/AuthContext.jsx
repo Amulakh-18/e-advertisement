@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -14,18 +14,14 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored token on mount
-    const token = localStorage.getItem('auth_token');
-    if (token) {
+    // Check for stored user data on mount
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
       try {
-        const decoded = jwtDecode(token);
-        setUser({
-          ...decoded,
-          token,
-        });
+        setUser(JSON.parse(storedUser));
       } catch (error) {
-        console.error('Invalid token:', error);
-        localStorage.removeItem('auth_token');
+        console.error('Invalid stored user:', error);
+        localStorage.removeItem('user');
       }
     }
     setLoading(false);
@@ -33,59 +29,30 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      // This would be replaced with actual API call
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const { token } = await response.json();
+      const { user, token } = await authAPI.login(credentials.email, credentials.password);
       localStorage.setItem('auth_token', token);
-
-      const decoded = jwtDecode(token);
-      setUser({
-        ...decoded,
-        token,
-      });
-
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
       return true;
     } catch (error) {
       console.error('Login error:', error);
-      return false;
+      throw error;
     }
   };
 
   const register = async (userData) => {
     try {
-      // This would be replaced with actual API call
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Registration failed');
-      }
-
+      const result = await authAPI.register(userData);
       return true;
     } catch (error) {
       console.error('Registration error:', error);
-      return false;
+      throw error;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 
@@ -107,6 +74,7 @@ export const AuthProvider = ({ children }) => {
     isAdvertiser,
     isViewer,
     hasRole,
+    isAuthenticated: !!user,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

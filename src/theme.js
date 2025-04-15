@@ -10,9 +10,9 @@ const theme = createTheme({
       contrastText: '#fff',
     },
     secondary: {
-      main: '#00BCD4',
-      light: '#4DD0E1',
-      dark: '#0097A7',
+      main: '#FF4081',
+      light: '#FF80AB',
+      dark: '#F50057',
       contrastText: '#fff',
     },
     background: {
@@ -46,45 +46,48 @@ const theme = createTheme({
     text: {
       primary: '#fff',
       secondary: 'rgba(255, 255, 255, 0.7)',
-      disabled: 'rgba(255, 255, 255, 0.5)',
     },
     divider: 'rgba(255, 255, 255, 0.12)',
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: '3.5rem',
-      fontWeight: 700,
+      fontSize: '2.5rem',
+      fontWeight: 600,
       lineHeight: 1.2,
-      letterSpacing: '-0.01562em',
-      background: 'linear-gradient(45deg, #2196F3, #00BCD4)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
     },
     h2: {
-      fontSize: '2.75rem',
+      fontSize: '2rem',
       fontWeight: 600,
-      lineHeight: 1.2,
+      lineHeight: 1.3,
     },
     h3: {
-      fontSize: '2.25rem',
-      fontWeight: 600,
-      lineHeight: 1.2,
-    },
-    h4: {
       fontSize: '1.75rem',
       fontWeight: 600,
-      lineHeight: 1.2,
+      lineHeight: 1.3,
     },
-    h5: {
+    h4: {
       fontSize: '1.5rem',
       fontWeight: 600,
-      lineHeight: 1.2,
+      lineHeight: 1.4,
     },
-    h6: {
+    h5: {
       fontSize: '1.25rem',
       fontWeight: 600,
-      lineHeight: 1.2,
+      lineHeight: 1.4,
+    },
+    h6: {
+      fontSize: '1rem',
+      fontWeight: 600,
+      lineHeight: 1.4,
+    },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.5,
+    },
+    body2: {
+      fontSize: '0.875rem',
+      lineHeight: 1.5,
     },
     button: {
       textTransform: 'none',
@@ -92,7 +95,7 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 8,
   },
   components: {
     MuiCssBaseline: {
@@ -116,9 +119,7 @@ const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: 'rgba(10, 25, 41, 0.8)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: 'none',
         },
       },
     },
@@ -134,39 +135,24 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
+          borderRadius: 12,
           background: 'rgba(10, 25, 41, 0.8)',
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
-          transition: 'transform 0.3s, box-shadow 0.3s',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-          },
         },
       },
     },
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: '8px',
-          padding: '8px 24px',
-          fontSize: '1rem',
-          transition: 'all 0.3s ease',
+          textTransform: 'none',
+          borderRadius: 8,
+          padding: '8px 16px',
         },
         contained: {
-          background: 'linear-gradient(45deg, #2196F3, #00BCD4)',
-          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.25)',
+          boxShadow: 'none',
           '&:hover': {
-            background: 'linear-gradient(45deg, #1976D2, #0097A7)',
-            transform: 'translateY(-2px)',
-            boxShadow: '0 6px 15px rgba(0, 0, 0, 0.3)',
-          },
-        },
-        outlined: {
-          borderColor: '#2196F3',
-          '&:hover': {
-            borderColor: '#64B5F6',
-            background: 'rgba(33, 150, 243, 0.1)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           },
         },
       },
@@ -193,9 +179,10 @@ const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
+          borderRadius: 12,
           background: 'rgba(10, 25, 41, 0.8)',
           backdropFilter: 'blur(20px)',
-          borderRadius: 12,
+          border: '1px solid rgba(255, 255, 255, 0.1)',
         },
       },
     },
@@ -213,7 +200,51 @@ const theme = createTheme({
         },
       },
     },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        },
+        head: {
+          fontWeight: 600,
+          background: 'rgba(10, 25, 41, 0.9)',
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+        },
+      },
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          height: 6,
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          minHeight: 48,
+          fontWeight: 500,
+        },
+      },
+    },
   },
+  shadows: [
+    'none',
+    '0 2px 4px rgba(0,0,0,0.1)',
+    '0 4px 8px rgba(0,0,0,0.1)',
+    '0 8px 16px rgba(0,0,0,0.1)',
+    '0 12px 24px rgba(0,0,0,0.1)',
+    '0 16px 32px rgba(0,0,0,0.1)',
+    ...Array(19).fill('none'),
+  ],
 });
 
 export default theme; 
