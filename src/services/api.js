@@ -1,48 +1,13 @@
 import axios from 'axios';
-import { mockCampaigns, mockAnalytics, mockAdTemplates } from './mockData';
-
-// Use mock services in development
-const USE_MOCK = true;
+import { mockAuthService } from './mockData';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-// For testing purposes, use mock data
-const mockUsers = {
-  'admin@example.com': {
-    id: 1,
-    email: 'admin@example.com',
-    password: 'admin123',
-    firstName: 'Admin',
-    lastName: 'User',
-    role: 'admin',
-    isActive: true
-  },
-  'advertiser@example.com': {
-    id: 2,
-    email: 'advertiser@example.com',
-    password: 'advertiser123',
-    firstName: 'Advertiser',
-    lastName: 'User',
-    role: 'advertiser',
-    isActive: true
-  },
-  'viewer@example.com': {
-    id: 3,
-    email: 'viewer@example.com',
-    password: 'viewer123',
-    firstName: 'Viewer',
-    lastName: 'User',
-    role: 'viewer',
-    isActive: true
-  }
-};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
 });
 
 // Add a request interceptor to include auth token
@@ -83,52 +48,93 @@ api.interceptors.response.use(
 // Auth API
 export const authAPI = {
   login: async (email, password) => {
-    // Use mock data for testing
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const user = mockUsers[email];
-        if (user && user.password === password) {
-          const { password: _, ...userWithoutPassword } = user;
-          resolve({
-            user: userWithoutPassword,
-            token: 'mock-jwt-token-' + user.role
-          });
-        } else {
-          reject(new Error('Invalid email or password'));
-        }
-      }, 500);
-    });
+    try {
+      // Use mock data for now
+      return await mockAuthService.login(email, password);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   },
 
   register: async (userData) => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true });
-      }, 500);
-    });
-  },
-
-  logout: async () => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true });
-      }, 500);
-    });
+    try {
+      const response = await api.post('/auth/register', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   },
 
   getProfile: async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) return null;
+    try {
+      const response = await api.get('/users/me');
+      return response.data;
+    } catch (error) {
+      console.error('Get profile error:', error);
+      return null;
+    }
+  },
 
-    // Extract role from mock token
-    const role = token.split('-')[2];
-    const user = Object.values(mockUsers).find(u => u.role === role);
-    if (!user) return null;
+  updateProfile: async (userData) => {
+    try {
+      const response = await api.put('/users/me', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error;
+    }
+  }
+};
 
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+// Advertisement API
+export const advertisementAPI = {
+  createAd: async (adData) => {
+    const response = await api.post('/advertisements', adData);
+    return response.data;
+  },
+
+  getAds: async (params = {}) => {
+    const response = await api.get('/advertisements', { params });
+    return response.data;
+  },
+
+  getAd: async (id) => {
+    const response = await api.get(`/advertisements/${id}`);
+    return response.data;
+  },
+
+  updateAd: async (id, adData) => {
+    const response = await api.put(`/advertisements/${id}`, adData);
+    return response.data;
+  },
+
+  deleteAd: async (id) => {
+    const response = await api.delete(`/advertisements/${id}`);
+    return response.data;
+  },
+
+  approveAd: async (id) => {
+    const response = await api.post(`/advertisements/${id}/approve`);
+    return response.data;
+  },
+
+  rejectAd: async (id) => {
+    const response = await api.post(`/advertisements/${id}/reject`);
+    return response.data;
+  },
+
+  uploadMedia: async (adId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post(`/advertisements/${adId}/media`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
   }
 };
 
@@ -187,82 +193,114 @@ export const campaignAPI = {
 
 // Ad Builder API
 export const adBuilderAPI = {
-  createAd: async (data) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true, id: Date.now() });
-      }, 500);
-    });
+  createAd: async (adData) => {
+    try {
+      const response = await api.post('/advertisements', adData);
+      return response.data;
+    } catch (error) {
+      console.error('Create ad error:', error);
+      throw error;
+    }
   },
 
   getAds: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockCampaigns);
-      }, 500);
-    });
+    try {
+      const response = await api.get('/advertisements');
+      return response.data;
+    } catch (error) {
+      console.error('Get ads error:', error);
+      throw error;
+    }
   },
 
   getAd: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockCampaigns.find(c => c.id === id));
-      }, 500);
-    });
+    try {
+      const response = await api.get(`/advertisements/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Get ad error:', error);
+      throw error;
+    }
   },
 
   updateAd: async (id, data) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true });
-      }, 500);
-    });
+    try {
+      const response = await api.put(`/advertisements/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Update ad error:', error);
+      throw error;
+    }
   },
 
   deleteAd: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true });
-      }, 500);
-    });
+    try {
+      const response = await api.delete(`/advertisements/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Delete ad error:', error);
+      throw error;
+    }
   },
 
-  uploadMedia: async (file) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ 
-          success: true,
-          url: `https://picsum.photos/seed/${Date.now()}/600/400`
-        });
-      }, 1000);
-    });
+  uploadMedia: async (adId, file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post(`/advertisements/${adId}/media`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Upload media error:', error);
+      throw error;
+    }
   }
 };
 
 // Analytics API
 export const analyticsAPI = {
   getDashboardData: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockAnalytics);
-      }, 500);
-    });
+    const response = await api.get('/analytics/dashboard');
+    return response.data;
   },
 
-  getCampaignStats: async (campaignId) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockAnalytics);
-      }, 500);
-    });
+  getUserInteractions: async () => {
+    const response = await api.get('/analytics/interactions');
+    return response.data;
   },
 
-  getOverallStats: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockAnalytics.overview);
-      }, 500);
-    });
+  getSurveys: async () => {
+    const response = await api.get('/analytics/surveys');
+    return response.data;
+  },
+
+  submitFeedback: async (feedbackData) => {
+    const response = await api.post('/analytics/feedback', feedbackData);
+    return response.data;
+  },
+
+  toggleLike: async (likeData) => {
+    const response = await api.post('/analytics/likes', likeData);
+    return response.data;
+  },
+
+  participateInSurvey: async (participationData) => {
+    const response = await api.post('/analytics/surveys/participate', participationData);
+    return response.data;
+  },
+
+  getAdMetrics: async (adId) => {
+    const response = await api.get(`/analytics/ads/${adId}/metrics`);
+    return response.data;
+  },
+
+  getCampaignMetrics: async (campaignId) => {
+    const response = await api.get(`/analytics/campaigns/${campaignId}/metrics`);
+    return response.data;
   }
 };
 

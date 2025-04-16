@@ -12,9 +12,13 @@ import {
   Tab,
   useTheme,
   Alert,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, UserRoles } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 
 const LoginPage = () => {
@@ -28,6 +32,7 @@ const LoginPage = () => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -66,10 +71,36 @@ const LoginPage = () => {
     }
     
     setLoading(true);
+    setErrors({}); // Clear previous submit errors
     try {
       await login(formData);
-      navigate('/dashboard');
+      
+      // Get the stored user data after successful login
+      const user = JSON.parse(localStorage.getItem('user'));
+      
+      // Determine the redirect path based on user role
+      let redirectPath = '/'; // Default path if role is unknown
+      if (user) {
+        switch (user.role) {
+          case UserRoles.ADMIN:
+            redirectPath = '/admin/dashboard';
+            break;
+          case UserRoles.ADVERTISER:
+            redirectPath = '/advertiser/dashboard';
+            break;
+          case UserRoles.VIEWER:
+            redirectPath = '/viewer/dashboard';
+            break;
+          default:
+            // Handle unknown roles or redirect to a generic authenticated page
+            redirectPath = '/dashboard'; // Default dashboard
+        }
+      }
+      
+      navigate(redirectPath, { replace: true }); // Use replace to avoid back button going to login
+      
     } catch (error) {
+      console.error('Login error:', error);
       setErrors(prev => ({
         ...prev,
         submit: error.response?.data?.detail || error.message || 'Invalid email or password'
@@ -77,6 +108,15 @@ const LoginPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Toggle password visibility
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault(); // Prevent blur on mouse down
   };
 
   return (
@@ -249,138 +289,99 @@ const LoginPage = () => {
           {errors.submit && (
             <Alert 
               severity="error" 
-              sx={{ 
-                width: '100%', 
-                mb: 3,
-                background: 'rgba(211, 47, 47, 0.1)',
-                border: '1px solid rgba(211, 47, 47, 0.3)',
-              }}
+              sx={{ mb: 3 }}
+              onClose={() => setErrors(prev => ({ ...prev, submit: '' }))} // Allow closing the alert
             >
               {errors.submit}
             </Alert>
           )}
-
-          <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  name="email"
-                  label="Email Address"
-                  fullWidth
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  error={!!errors.email}
-                  helperText={errors.email}
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  name="password"
-                  label="Password"
-                  fullWidth
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  error={!!errors.password}
-                  helperText={errors.password}
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-              <Link
-                component={RouterLink}
-                to="/forgot-password"
+          
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email Address"
+              name="email"
+              autoComplete="email"
+              autoFocus
+              value={formData.email}
+              onChange={handleChange}
+              error={!!errors.email}
+              helperText={errors.email}
+              sx={{ input: { color: 'white' }, label: { color: 'rgba(255,255,255,0.7)' } }}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              autoComplete="current-password"
+              value={formData.password}
+              onChange={handleChange}
+              error={!!errors.password}
+              helperText={errors.password}
+              sx={{ input: { color: 'white' }, label: { color: 'rgba(255,255,255,0.7)' } }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      onMouseDown={handleMouseDownPassword}
+                      edge="end"
+                      sx={{ color: 'rgba(255,255,255,0.7)' }}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {/* Forgot Password Link - Moved Here */}
+            <Box sx={{ textAlign: 'right', mt: 1, mb: 1 }}> {/* Aligned right */} 
+              <Link 
+                href="#" // Replace with actual forgot password route later
                 variant="body2"
-                sx={{
-                  color: theme.palette.primary.main,
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                Forgot Password?
+                sx={{ color: 'rgba(255, 255, 255, 0.7)', '&:hover': { color: '#2196F3' } }}
+                >
+                Forgot password?
               </Link>
             </Box>
-
+            
+            {/* Remember Me Checkbox - Add if needed */}
             <Button
               type="submit"
               fullWidth
               variant="contained"
               disabled={loading}
               sx={{
-                mt: 4,
+                mt: 3, // Keep margin top
                 mb: 2,
-                py: 1.5,
+                p: 1.5,
                 background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-                fontSize: '1.1rem',
-                textTransform: 'none',
-                borderRadius: 2,
                 '&:hover': {
                   background: 'linear-gradient(45deg, #1976D2, #1E88E5)',
-                  boxShadow: '0 8px 32px rgba(33, 150, 243, 0.3)',
                 },
+                position: 'relative',
               }}
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Log In'}
             </Button>
-
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Link
-                component={RouterLink}
-                to="/signup"
+            
+            {/* Sign Up Link - Centered */}
+            <Box sx={{ textAlign: 'center', mt: 2 }}> {/* Centered */} 
+              <Link 
+                component={RouterLink} 
+                to="/signup" 
                 variant="body2"
-                sx={{
-                  color: theme.palette.primary.main,
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
+                sx={{ color: 'rgba(255, 255, 255, 0.7)', '&:hover': { color: '#2196F3' } }}
               >
-                Don't have an account? Sign up
+                {"Don't have an account? Sign Up"}
               </Link>
             </Box>
           </Box>

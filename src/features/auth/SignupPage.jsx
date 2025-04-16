@@ -16,9 +16,12 @@ import {
   FormHelperText,
   Grid,
   useTheme,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
-import { useAuth } from '../../contexts/AuthContext';
-import { UserRoles } from '../../contexts/AuthContext';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useAuth, UserRoles } from '../../contexts/AuthContext';
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -30,11 +33,13 @@ const SignupPage = () => {
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    role: UserRoles.USER,
+    role: UserRoles.VIEWER,
+    companyName: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -57,6 +62,9 @@ const SignupPage = () => {
     if (!formData.lastName) {
       newErrors.lastName = 'Last name is required';
     }
+    if (formData.role === UserRoles.ADVERTISER && !formData.companyName) {
+      newErrors.companyName = 'Company name is required for advertisers';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -65,20 +73,28 @@ const SignupPage = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    setErrors({});
+    setLoading(true);
     try {
-      setError('');
-      setLoading(true);
-      await register({
+      const registrationData = {
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
         role: formData.role,
-      });
-      navigate('/');
+        ...(formData.role === UserRoles.ADVERTISER && { companyName: formData.companyName }),
+      };
+
+      console.log('Registering user (mock):', registrationData);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      navigate('/login');
     } catch (err) {
-      setError('Failed to create an account');
       console.error('Signup error:', err);
+      setErrors(prev => ({
+        ...prev,
+        submit: err.response?.data?.detail || 'Failed to create account. Please try again.'
+      }));
     } finally {
       setLoading(false);
     }
@@ -90,7 +106,6 @@ const SignupPage = () => {
       ...prev,
       [name]: value,
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -98,6 +113,22 @@ const SignupPage = () => {
       }));
     }
   };
+
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
+
+  const handleClickShowConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+  const handleMouseDownConfirmPassword = (event) => {
+    event.preventDefault();
+  };
+
+  const showCompanyName = formData.role === UserRoles.ADVERTISER;
 
   return (
     <Box
@@ -158,6 +189,7 @@ const SignupPage = () => {
                 justifyContent: 'center',
                 background: 'rgba(33, 150, 243, 0.1)',
                 border: '1px solid rgba(33, 150, 243, 0.2)',
+                color: '#fff'
               }}
             >
               1
@@ -177,6 +209,7 @@ const SignupPage = () => {
                 justifyContent: 'center',
                 background: 'rgba(33, 150, 243, 0.1)',
                 border: '1px solid rgba(33, 150, 243, 0.2)',
+                color: '#fff'
               }}
             >
               2
@@ -196,6 +229,7 @@ const SignupPage = () => {
                 justifyContent: 'center',
                 background: 'rgba(33, 150, 243, 0.1)',
                 border: '1px solid rgba(33, 150, 243, 0.2)',
+                color: '#fff'
               }}
             >
               3
@@ -246,241 +280,187 @@ const SignupPage = () => {
             Create Your Account
           </Typography>
 
-          {error && (
+          {errors.submit && (
             <Alert 
               severity="error" 
-              sx={{ 
-                width: '100%', 
-                mb: 3,
-                background: 'rgba(211, 47, 47, 0.1)',
-                border: '1px solid rgba(211, 47, 47, 0.3)',
-              }}
+              sx={{ mb: 3 }}
+              onClose={() => setErrors(prev => ({ ...prev, submit: '' }))}
             >
-              {error}
+              {errors.submit}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+          <Box component="form" onSubmit={handleSubmit} noValidate>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  name="firstName"
-                  label="First Name"
+                  required
                   fullWidth
+                  id="firstName"
+                  label="First Name"
+                  name="firstName"
+                  autoComplete="given-name"
                   value={formData.firstName}
                   onChange={handleChange}
                   error={!!errors.firstName}
                   helperText={errors.firstName}
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
-                  }}
+                  sx={{ input: { color: 'white' }, label: { color: 'rgba(255,255,255,0.7)' } }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  name="lastName"
-                  label="Last Name"
+                  required
                   fullWidth
+                  id="lastName"
+                  label="Last Name"
+                  name="lastName"
+                  autoComplete="family-name"
                   value={formData.lastName}
                   onChange={handleChange}
                   error={!!errors.lastName}
                   helperText={errors.lastName}
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
-                  }}
+                  sx={{ input: { color: 'white' }, label: { color: 'rgba(255,255,255,0.7)' } }}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  name="email"
-                  label="Email Address"
+                  required
                   fullWidth
+                  id="email"
+                  label="Email Address"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
                   error={!!errors.email}
                   helperText={errors.email}
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
-                  }}
+                  sx={{ input: { color: 'white' }, label: { color: 'rgba(255,255,255,0.7)' } }}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
+                  required
+                  fullWidth
                   name="password"
                   label="Password"
-                  fullWidth
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
                   error={!!errors.password}
                   helperText={errors.password}
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
+                  sx={{ input: { color: 'white' }, label: { color: 'rgba(255,255,255,0.7)' } }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={handleClickShowPassword}
+                          onMouseDown={handleMouseDownPassword}
+                          edge="end"
+                          sx={{ color: 'rgba(255,255,255,0.7)' }}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
                   }}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
+                  required
+                  fullWidth
                   name="confirmPassword"
                   label="Confirm Password"
-                  fullWidth
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   error={!!errors.confirmPassword}
                   helperText={errors.confirmPassword}
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
+                  sx={{ input: { color: 'white' }, label: { color: 'rgba(255,255,255,0.7)' } }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle confirm password visibility"
+                          onClick={handleClickShowConfirmPassword}
+                          onMouseDown={handleMouseDownConfirmPassword}
+                          edge="end"
+                          sx={{ color: 'rgba(255,255,255,0.7)' }}
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
                   }}
                 />
               </Grid>
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Role</InputLabel>
+                <FormControl fullWidth required error={!!errors.role}>
+                  <InputLabel id="role-label" sx={{ color: 'rgba(255,255,255,0.7)' }}>Account Type</InputLabel>
                   <Select
+                    labelId="role-label"
+                    id="role"
                     name="role"
                     value={formData.role}
+                    label="Account Type"
                     onChange={handleChange}
-                    sx={{
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                      },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: theme.palette.primary.main,
-                      },
-                      color: '#fff',
-                    }}
+                    sx={{ color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.23)' } }}
                   >
-                    <MenuItem value={UserRoles.USER}>User</MenuItem>
-                    <MenuItem value={UserRoles.ADVERTISER}>Advertiser</MenuItem>
+                    <MenuItem value={UserRoles.VIEWER}>Viewer (Interact with Ads)</MenuItem>
+                    <MenuItem value={UserRoles.ADVERTISER}>Advertiser (Create Campaigns)</MenuItem>
                   </Select>
+                  {errors.role && <FormHelperText>{errors.role}</FormHelperText>}
                 </FormControl>
               </Grid>
+              {showCompanyName && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    id="companyName"
+                    label="Company Name (Required for Advertisers)"
+                    name="companyName"
+                    autoComplete="organization"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    error={!!errors.companyName}
+                    helperText={errors.companyName}
+                    sx={{ input: { color: 'white' }, label: { color: 'rgba(255,255,255,0.7)' } }}
+                  />
+                </Grid>
+              )}
             </Grid>
-
+            
             <Button
               type="submit"
               fullWidth
               variant="contained"
               disabled={loading}
               sx={{
-                mt: 4,
+                mt: 3,
                 mb: 2,
-                py: 1.5,
+                p: 1.5,
                 background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-                fontSize: '1.1rem',
-                textTransform: 'none',
-                borderRadius: 2,
                 '&:hover': {
                   background: 'linear-gradient(45deg, #1976D2, #1E88E5)',
-                  boxShadow: '0 8px 32px rgba(33, 150, 243, 0.3)',
                 },
+                position: 'relative'
               }}
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Create Account'}
             </Button>
-
+            
             <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Link
-                component={RouterLink}
-                to="/login"
+              <Link 
+                component={RouterLink} 
+                to="/login" 
                 variant="body2"
-                sx={{
-                  color: theme.palette.primary.main,
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
+                sx={{ color: 'rgba(255, 255, 255, 0.7)', '&:hover': { color: '#2196F3' } }}
               >
                 Already have an account? Login
               </Link>

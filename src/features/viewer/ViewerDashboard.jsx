@@ -35,96 +35,16 @@ import {
   Visibility,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-
-// Mock data
-const MOCK_ADS = [
-  {
-    id: 1,
-    title: 'Summer Collection 2024',
-    description: 'Discover our latest summer collection with up to 50% off on selected items.',
-    image: 'https://source.unsplash.com/random/800x600/?summer,fashion',
-    rating: 4.5,
-    feedbackCount: 128,
-    tags: ['Fashion', 'Summer', 'Sale'],
-    advertiser: 'Fashion Store',
-    likes: 245,
-    views: 1200,
-    category: 'Fashion',
-  },
-  {
-    id: 2,
-    title: 'New Tech Gadgets',
-    description: 'Experience the future with our cutting-edge technology products.',
-    image: 'https://source.unsplash.com/random/800x600/?technology,gadgets',
-    rating: 4.2,
-    feedbackCount: 85,
-    tags: ['Technology', 'Gadgets', 'Innovation'],
-    advertiser: 'Tech Hub',
-    likes: 189,
-    views: 890,
-    category: 'Technology',
-  },
-  {
-    id: 3,
-    title: 'Healthy Living Products',
-    description: 'Start your wellness journey with our organic product range.',
-    image: 'https://source.unsplash.com/random/800x600/?healthy,organic',
-    rating: 4.8,
-    feedbackCount: 156,
-    tags: ['Health', 'Organic', 'Wellness'],
-    advertiser: 'Organic Life',
-    likes: 312,
-    views: 1500,
-    category: 'Health',
-  },
-];
-
-const MOCK_INTERACTIONS = [
-  {
-    id: 1,
-    type: 'like',
-    adTitle: 'Summer Collection 2024',
-    date: '2024-03-15',
-    advertiser: 'Fashion Store',
-  },
-  {
-    id: 2,
-    type: 'feedback',
-    adTitle: 'New Tech Gadgets',
-    date: '2024-03-14',
-    advertiser: 'Tech Hub',
-  },
-  {
-    id: 3,
-    type: 'view',
-    adTitle: 'Healthy Living Products',
-    date: '2024-03-13',
-    advertiser: 'Organic Life',
-  },
-];
-
-const MOCK_SURVEYS = [
-  {
-    id: 1,
-    title: 'Product Satisfaction Survey',
-    description: 'Help us improve our products with your valuable feedback',
-    reward: 50,
-    duration: '5 mins',
-    deadline: '2024-03-30',
-  },
-  {
-    id: 2,
-    title: 'User Experience Survey',
-    description: 'Share your experience with our new website design',
-    reward: 30,
-    duration: '3 mins',
-    deadline: '2024-03-25',
-  },
-];
+import { advertisementAPI, analyticsAPI } from '../../services/api';
 
 const ViewerDashboard = () => {
   const { user } = useAuth();
   const [currentTab, setCurrentTab] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [ads, setAds] = useState([]);
+  const [interactions, setInteractions] = useState([]);
+  const [surveys, setSurveys] = useState([]);
   const [feedback, setFeedback] = useState('');
   const [rating, setRating] = useState(0);
   const [selectedAd, setSelectedAd] = useState(null);
@@ -132,36 +52,100 @@ const ViewerDashboard = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [likedAds, setLikedAds] = useState(new Set());
 
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch featured ads
+        const adsResponse = await advertisementAPI.getAds({ 
+          status: 'active',
+          limit: 6,
+          sort: '-createdAt'
+        });
+        setAds(adsResponse.data);
+
+        // Fetch user interactions
+        const interactionsResponse = await analyticsAPI.getUserInteractions();
+        setInteractions(interactionsResponse.data);
+
+        // Fetch available surveys
+        const surveysResponse = await analyticsAPI.getSurveys();
+        setSurveys(surveysResponse.data);
+
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err.message || 'Failed to fetch dashboard data');
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
   };
 
-  const handleFeedbackSubmit = (adId) => {
-    setSnackbar({
-      open: true,
-      message: 'Thank you for your feedback!',
-      severity: 'success',
-    });
-    setFeedback('');
-    setRating(0);
-    setOpenDialog(false);
+  const handleFeedbackSubmit = async (adId) => {
+    try {
+      await analyticsAPI.submitFeedback({
+        adId,
+        rating,
+        feedback,
+        userId: user.id
+      });
+
+      setSnackbar({
+        open: true,
+        message: 'Thank you for your feedback!',
+        severity: 'success',
+      });
+      setFeedback('');
+      setRating(0);
+      setOpenDialog(false);
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: 'Failed to submit feedback. Please try again.',
+        severity: 'error',
+      });
+    }
   };
 
-  const handleLikeAd = (adId) => {
-    setLikedAds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(adId)) {
-        newSet.delete(adId);
-      } else {
-        newSet.add(adId);
-      }
-      return newSet;
-    });
-    setSnackbar({
-      open: true,
-      message: likedAds.has(adId) ? 'Removed from liked ads' : 'Added to liked ads',
-      severity: 'success',
-    });
+  const handleLikeAd = async (adId) => {
+    try {
+      const isLiked = likedAds.has(adId);
+      await analyticsAPI.toggleLike({
+        adId,
+        userId: user.id,
+        action: isLiked ? 'unlike' : 'like'
+      });
+
+      setLikedAds(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(adId)) {
+          newSet.delete(adId);
+        } else {
+          newSet.add(adId);
+        }
+        return newSet;
+      });
+
+      setSnackbar({
+        open: true,
+        message: isLiked ? 'Removed from liked ads' : 'Added to liked ads',
+        severity: 'success',
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: 'Failed to update like status. Please try again.',
+        severity: 'error',
+      });
+    }
   };
 
   const handleShareAd = (ad) => {
@@ -173,13 +157,34 @@ const ViewerDashboard = () => {
     });
   };
 
-  const handleSurveyParticipate = (survey) => {
-    setSnackbar({
-      open: true,
-      message: 'Survey participation recorded. Rewards will be credited soon!',
-      severity: 'success',
-    });
+  const handleSurveyParticipate = async (survey) => {
+    try {
+      await analyticsAPI.participateInSurvey({
+        surveyId: survey.id,
+        userId: user.id
+      });
+
+      setSnackbar({
+        open: true,
+        message: 'Survey participation recorded. Rewards will be credited soon!',
+        severity: 'success',
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: 'Failed to record survey participation. Please try again.',
+        severity: 'error',
+      });
+    }
   };
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ m: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -197,160 +202,172 @@ const ViewerDashboard = () => {
 
       {currentTab === 0 && (
         <Grid container spacing={3}>
-          {MOCK_ADS.map((ad) => (
-            <Grid item xs={12} md={6} key={ad.id}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={ad.image}
-                  alt={ad.title}
-                  sx={{ objectFit: 'cover' }}
-                />
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="h6">{ad.title}</Typography>
-                    <Chip label={ad.category} color="primary" size="small" />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    {ad.description}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                    {ad.tags.map((tag) => (
-                      <Chip key={tag} label={tag} size="small" />
-                    ))}
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Rating value={ad.rating} precision={0.5} readOnly />
-                    <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                      ({ad.feedbackCount} reviews)
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton onClick={() => handleLikeAd(ad.id)}>
-                        {likedAds.has(ad.id) ? <Favorite color="error" /> : <FavoriteBorder />}
-                      </IconButton>
-                      <IconButton onClick={() => handleShareAd(ad)}>
-                        <Share />
-                      </IconButton>
-                    </Box>
-                    <Button
-                      variant="contained"
-                      onClick={() => {
-                        setSelectedAd(ad);
-                        setOpenDialog(true);
-                      }}
-                    >
-                      Give Feedback
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
+          {loading ? (
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
             </Grid>
-          ))}
+          ) : ads.length > 0 ? (
+            ads.map((ad) => (
+              <Grid item xs={12} sm={6} md={4} key={ad.id}>
+                <Card sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}>
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={ad.image}
+                    alt={ad.title}
+                  />
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography gutterBottom variant="h6" component="h2">
+                      {ad.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      {ad.description}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                      {ad.tags.map((tag) => (
+                        <Chip key={tag} label={tag} size="small" />
+                      ))}
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                      <Avatar src={ad.advertiserAvatar} sx={{ width: 24, height: 24 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {ad.advertiser}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Rating value={ad.rating} readOnly precision={0.5} />
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleLikeAd(ad.id)}
+                          color={likedAds.has(ad.id) ? 'error' : 'default'}
+                        >
+                          {likedAds.has(ad.id) ? <Favorite /> : <FavoriteBorder />}
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleShareAd(ad)}>
+                          <Share />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          ) : (
+            <Grid item xs={12}>
+              <Typography align="center" color="text.secondary" sx={{ py: 4 }}>
+                No featured ads available at the moment.
+              </Typography>
+            </Grid>
+          )}
         </Grid>
       )}
 
       {currentTab === 1 && (
-        <Grid container spacing={3}>
-          {MOCK_INTERACTIONS.map((interaction) => (
-            <Grid item xs={12} key={interaction.id}>
-              <Paper sx={{ p: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar sx={{ bgcolor: 'primary.main' }}>
-                    {interaction.type === 'like' ? <ThumbUp /> : 
-                     interaction.type === 'feedback' ? <Poll /> : <Visibility />}
-                  </Avatar>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle1">
-                      {interaction.adTitle}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {interaction.advertiser} • {interaction.date}
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    {interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1)}
-                  </Typography>
-                </Box>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
+        <Paper sx={{ p: 3, background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : interactions.length > 0 ? (
+            interactions.map((interaction) => (
+              <Box key={interaction.id} sx={{ mb: 2, p: 2, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <Typography variant="subtitle1">{interaction.adTitle}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {interaction.type} • {interaction.date}
+                </Typography>
+              </Box>
+            ))
+          ) : (
+            <Typography align="center" color="text.secondary" sx={{ py: 4 }}>
+              No interactions recorded yet.
+            </Typography>
+          )}
+        </Paper>
       )}
 
       {currentTab === 2 && (
         <Grid container spacing={3}>
-          {MOCK_SURVEYS.map((survey) => (
-            <Grid item xs={12} md={6} key={survey.id}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {survey.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    {survey.description}
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Chip label={`${survey.duration}`} variant="outlined" size="small" />
-                    <Chip label={`Reward: ${survey.reward} points`} color="primary" size="small" />
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Deadline: {survey.deadline}
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={() => handleSurveyParticipate(survey)}
-                    >
-                      Participate
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
+          {loading ? (
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
             </Grid>
-          ))}
+          ) : surveys.length > 0 ? (
+            surveys.map((survey) => (
+              <Grid item xs={12} sm={6} key={survey.id}>
+                <Card sx={{ 
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      {survey.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      {survey.description}
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Reward: {survey.reward} points • Duration: {survey.duration}
+                      </Typography>
+                      <Button 
+                        variant="contained" 
+                        onClick={() => handleSurveyParticipate(survey)}
+                        startIcon={<Poll />}
+                      >
+                        Participate
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          ) : (
+            <Grid item xs={12}>
+              <Typography align="center" color="text.secondary" sx={{ py: 4 }}>
+                No surveys available at the moment.
+              </Typography>
+            </Grid>
+          )}
         </Grid>
       )}
 
-      {/* Feedback Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Share Your Feedback</DialogTitle>
+        <DialogTitle>Submit Feedback</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Rate this advertisement
-            </Typography>
             <Rating
               value={rating}
               onChange={(event, newValue) => setRating(newValue)}
-              size="large"
-              sx={{ mb: 2 }}
+              precision={0.5}
             />
             <TextField
               fullWidth
               multiline
               rows={4}
-              placeholder="Share your thoughts about this advertisement..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
+              placeholder="Share your thoughts..."
+              sx={{ mt: 2 }}
             />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={() => handleFeedbackSubmit(selectedAd?.id)}
-            disabled={!feedback || !rating}
-          >
-            Submit Feedback
+          <Button onClick={() => handleFeedbackSubmit(selectedAd?.id)} variant="contained">
+            Submit
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

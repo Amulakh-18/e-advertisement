@@ -31,9 +31,35 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth, UserRoles } from '../../contexts/AuthContext';
 
 const HeroSection = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      let dashboardPath = '/';
+      switch (user?.role) {
+        case UserRoles.ADMIN:
+          dashboardPath = '/admin';
+          break;
+        case UserRoles.ADVERTISER:
+          dashboardPath = '/advertiser';
+          break;
+        case UserRoles.VIEWER:
+          dashboardPath = '/viewer';
+          break;
+        default:
+          dashboardPath = '/settings';
+      }
+      navigate(dashboardPath);
+    } else {
+      navigate('/signup');
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -76,6 +102,7 @@ const HeroSection = () => {
               <Button
                 variant="contained"
                 size="large"
+                onClick={handleGetStarted}
                 sx={{
                   bgcolor: 'white',
                   color: 'primary.main',

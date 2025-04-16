@@ -55,6 +55,12 @@ const Settings = () => {
   });
   const [passwordError, setPasswordError] = useState('');
   const [themeMode, setThemeMode] = useState('dark');
+  const [profileData, setProfileData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+  });
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleNotificationChange = (type) => (event) => {
     setNotifications({
@@ -90,8 +96,32 @@ const Settings = () => {
     setOpenThemeDialog(false);
   };
 
+  const handleSaveProfile = async () => {
+    try {
+      // Here you would typically call an API to update the profile
+      // For now, we'll just show a success message
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    }
+  };
+
+  const handleProfileChange = (field) => (event) => {
+    setProfileData({
+      ...profileData,
+      [field]: event.target.value,
+    });
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4, mt: 2 }}>
+      {saveSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Profile updated successfully!
+        </Alert>
+      )}
+      
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Settings
@@ -124,7 +154,7 @@ const Settings = () => {
                   background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
                 }}
               >
-                {user?.firstName?.[0] || <PersonIcon />}
+                {profileData.firstName[0] || <PersonIcon />}
               </Avatar>
               <Button
                 variant="outlined"
@@ -147,7 +177,8 @@ const Settings = () => {
                 <TextField
                   fullWidth
                   label="First Name"
-                  defaultValue={user?.firstName || ''}
+                  value={profileData.firstName}
+                  onChange={handleProfileChange('firstName')}
                   variant="outlined"
                   sx={{
                     '& .MuiOutlinedInput-root': {
@@ -165,7 +196,8 @@ const Settings = () => {
                 <TextField
                   fullWidth
                   label="Last Name"
-                  defaultValue={user?.lastName || ''}
+                  value={profileData.lastName}
+                  onChange={handleProfileChange('lastName')}
                   variant="outlined"
                   sx={{
                     '& .MuiOutlinedInput-root': {
@@ -183,7 +215,8 @@ const Settings = () => {
                 <TextField
                   fullWidth
                   label="Email"
-                  defaultValue={user?.email || ''}
+                  value={profileData.email}
+                  onChange={handleProfileChange('email')}
                   variant="outlined"
                   InputProps={{
                     startAdornment: <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />,
@@ -203,15 +236,11 @@ const Settings = () => {
               <Grid item xs={12}>
                 <Button
                   variant="contained"
-                  fullWidth
-                  sx={{
-                    background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-                    '&:hover': {
-                      background: 'linear-gradient(45deg, #1976D2, #1E88E5)',
-                    },
-                  }}
+                  color="primary"
+                  onClick={handleSaveProfile}
+                  sx={{ mt: 2 }}
                 >
-                  Update Profile
+                  Save Profile
                 </Button>
               </Grid>
             </Grid>
@@ -269,14 +298,7 @@ const Settings = () => {
                     <Button 
                       variant="outlined"
                       size="small"
-                      sx={{
-                        color: 'primary.main',
-                        borderColor: 'rgba(33, 150, 243, 0.5)',
-                        '&:hover': {
-                          borderColor: 'primary.main',
-                          background: 'rgba(33, 150, 243, 0.08)',
-                        },
-                      }}
+                      color="primary"
                     >
                       Change
                     </Button>
@@ -287,19 +309,13 @@ const Settings = () => {
                     </ListItemIcon>
                     <ListItemText 
                       primary="Theme"
-                      secondary="Dark"
+                      secondary={themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}
                     />
                     <Button 
                       variant="outlined"
                       size="small"
-                      sx={{
-                        color: 'primary.main',
-                        borderColor: 'rgba(33, 150, 243, 0.5)',
-                        '&:hover': {
-                          borderColor: 'primary.main',
-                          background: 'rgba(33, 150, 243, 0.08)',
-                        },
-                      }}
+                      color="primary"
+                      onClick={() => setOpenThemeDialog(true)}
                     >
                       Change
                     </Button>
